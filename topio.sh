@@ -10,7 +10,6 @@
 # UserParameter=system.topio[*],/etc/zabbix/userscript/ioreport.sh        #
 # Replace "system.topio[*]" with any item key you want.                   #
 ###########################################################################
-#                           By thunderysteak                              #
 #                         Use at your own risk!                           #
 ###########################################################################
 # Runs iotop in batch mode and displays only the active processes using IO
