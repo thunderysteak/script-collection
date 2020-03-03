@@ -69,9 +69,6 @@ if($lastSessionLog -Match 'Using \d* hosts for distributed rendering'){
         $MessageContent += "`n" + "`n" + "Distributed rendering is being used, warnings and errors are for client only." + "`n" + $getDRNodeCount
     } 
 
-    $embeds = @{
-        "title" = "Meow!"
-  }
 $MessageContent += "`n" + $discordMentionList
 if ($discordUseAvatar -eq "true"){
     $JSON = @{
