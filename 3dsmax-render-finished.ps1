@@ -21,13 +21,16 @@ $discordErrorAvUrl = ""
 $CurrentTimeStamp = Get-Date -Format "dddd MM/dd/yyyy HH:mm"
 $getLastRenderStatus = Get-content $env:temp\vraylog.txt |Select-String  -Pattern "error\(s\), * "
 $renderStatus = $getLastRenderStatus[$getLastRenderStatus.Count – 1]
+$getLogLinesCount = (Get-content $env:temp\vraylog.txt).count
+$getLastSessionStart = (Select-String -Path $env:temp\vraylog.txt -Pattern "error\(s\), * ").lineNumber 
+$lastSessionLog = (Get-Content -Path $env:temp\vraylog.txt)[$getLastSessionStart[-2]..$getLogLinesCount]
 if($renderStatus -Match '0 error\(s\), 0 warning\(s\)*'){
         $MessageContent = "3DS Max render finished at " + $CurrentTimeStamp + "`nRender status:`n" + $renderStatus
     } 
     elseif ($renderStatus -Match '0 error\(s\)*') {
         #Safety in case the script mistakely detects warnings or errors even when none are to be found
         $WarningCount = 0
-        $LogFileWarningContent = Get-content $env:temp\vraylog.txt |Select-String  -Pattern "warning: *"
+        $LogFileWarningContent = $lastSessionLog |Select-String  -Pattern "warning: *"
         $WarningCount = $LogFileWarningContent | Measure-Object -Character;
         $LogFileWarningSize = $WarningCount.Characters
             #Discord supports maximum 2000 characters in a message
@@ -40,10 +43,10 @@ if($renderStatus -Match '0 error\(s\), 0 warning\(s\)*'){
             if ($discordCustomErrorAV -eq "true"){
             $discordAvatarUrl = $discordWarningAvUrl
             }
-        $MessageContent = "3DS Max render finished at " + $CurrentTimeStamp + "`nRender status:`n" + $renderStatus + "`n" +$LogFileWarning
+        $MessageContent = "3DS Max render finished at " + $CurrentTimeStamp + "`nRender status:`n" + $renderStatus + "`n" +"`nLogs:`n" +$LogFileWarning
     }
     else {
-        $LogFileErrorContent = Get-content $env:temp\vraylog.txt |Select-String  -Pattern "error: *" 
+        $LogFileErrorContent = Get-content $lastSessionLog |Select-String  -Pattern "error: *" 
         #Safety in case the script mistakely detects warnings or errors even when none are to be found
         $ErrorCount = 0
         $ErrorCount = $LogFileErrorContent | Measure-Object -Character;
@@ -58,9 +61,17 @@ if($renderStatus -Match '0 error\(s\), 0 warning\(s\)*'){
             if ($discordCustomErrorAV -eq "true"){
             $discordAvatarUrl = $discordErrorAvUrl
             }
-        $MessageContent = “3DS Max render failed at ” + $CurrentTimeStamp + "!`nPlease check the %temp%\vraylog.txt file for CUDA errors." + "`n" + $renderStatus + "`n" + $LogFileError
+        $MessageContent = “3DS Max render failed at ” + $CurrentTimeStamp + "!`nPlease check the %temp%\vraylog.txt file for CUDA errors." + "`n" + $renderStatus + "`n" + "`nLogs:`n" + $LogFileError
     }
 
+if($lastSessionLog -Match 'Using \d* hosts for distributed rendering'){
+        $getDRNodeCount = $lastSessionLog |Select-String  -Pattern "Using \d* hosts for distributed rendering"
+        $MessageContent += "`n" + "`n" + "Distributed rendering is being used, warnings and errors are for client only." + "`n" + $getDRNodeCount
+    } 
+
+    $embeds = @{
+        "title" = "Meow!"
+  }
 $MessageContent += "`n" + $discordMentionList
 if ($discordUseAvatar -eq "true"){
     $JSON = @{
